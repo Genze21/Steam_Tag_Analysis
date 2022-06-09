@@ -3,6 +3,7 @@ import requests
 import json
 import pandas as pd
 import os
+from os.path import exists
 import time
 
 # response = requests.get(" https://store.steampowered.com/api/appdetails?appids=10&filters=release_date")
@@ -16,25 +17,38 @@ def main():
 							'release_date':[],
 							'steam_appid': []})
 
-	bulkNumber = 0
+	initTime = time.time()
+	bulkNumber = '1_'
 
 	dataFolder = './data/initial/'
 	directory = os.fsencode(dataFolder)
 	# loop through all datasets
 	for file in os.listdir(directory):	
+		start = time.time()
+		
 		fileName = os.fsdecode(file)
-		if  fileName.startswith(str(bulkNumber)) and fileName.endswith('.csv'):
-			print(f"filename: {fileName}")
+		saveLocation = './data/' + fileName[:-4] + '_full.csv'
+
+		if (fileName.startswith(bulkNumber) and fileName.endswith('.csv') and not os.path.exists(str(saveLocation))):
 			dfGenres = pd.read_csv(dataFolder + fileName)
 
+			print(f"Start with: \t {fileName}")
 			# get every appid from dataset and call steam API
 			appidsList = dfGenres['appid'].tolist()
 			for appid in appidsList:
 				responseLink = 'https://store.steampowered.com/api/appdetails?appids='+ str(appid) + '&filters=release_date'
-				response = requests.get(responseLink).json()
-
+				try:
+					response = requests.get(responseLink).json()
+				except:
+					print(appid)
+					continue
 				# normalize the json
 				dfReleaseDates = pd.json_normalize(response)
+
+				# skip if fail (succes = false)
+				if(len(dfReleaseDates.columns) != 3):	
+					continue
+
 				dfReleaseDates.columns = ['succes', 'coming_soon', 'release_date']
 
 				# add the appid for merging
@@ -43,14 +57,24 @@ def main():
 				initDF = pd.concat(frames)
 
 				# limit of 200 request every 5min for API (1 call per 1.5s)
-				time.sleep(2)
+				time.sleep(1.7)
 			
 			# safe dates to a file
-			saveLocation = './data/dates/' + fileName[:-4] + '_dates.csv'
-			initDF.to_csv(saveLocation)
+			saveDateLocation = './data/dates/' + fileName[:-4] + '_dates.csv'
+			initDF.to_csv(saveDateLocation)
 			# safe merged to a file
-			saveLocation = './data/' + fileName[:-4] + '_full.csv'
 			merge = dfGenres.merge(initDF, left_on='appid', right_on='steam_appid')
 			merge.to_csv(saveLocation)
+
+			done = time.time()
+
+			print(f"Done with: \t {fileName}")
+			print(f"Time: \t {done - start}")
+			print("===========================")
+
+	total = time.time()
+	print(f"Total time: \t {total - initTime}")
+
+
 if __name__ == '__main__':
 	main()

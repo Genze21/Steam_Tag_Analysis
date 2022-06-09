@@ -41,7 +41,7 @@ genresDict = [
 def main():
 	dataFolder = './data/initial/'
 
-	bulkNumber = 5 # start from which bulk(real time.csv)
+	bulkNumber = 0 # start from which bulk(real time.csv)
 	amountCounter = 0
 
 	for i in genresDict:
@@ -67,15 +67,15 @@ def main():
 			df_json.to_csv(filename)
 
 		# count the amount of items in the file
+		print(f"Done with {filename}")
 		with open(filename, 'r') as fp:
 			x = len(fp.readlines())
 			amountCounter += x
-			if(amountCounter > 3600):
-				print('Total lines', amountCounter) # 8
+			if(amountCounter > 1800):
+				print('Total entries', amountCounter) # 8
 				amountCounter = 0
 				bulkNumber += 1
 
-		print(f"Done with {filename}")
 
 	printStat = False
 	if(printStat):

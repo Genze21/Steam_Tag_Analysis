@@ -2,26 +2,55 @@ import requests
 import json
 import pandas as pd
 import os
+from os.path import exists
 
-# dictionary with included genres
-genresDict = {
-'2D Platformer' : 'http://steamspy.com/api.php?request=tag&tag=2D+Platformer',	
-'action' 		: 'http://steamspy.com/api.php?request=tag&tag=Action',
-'earlyAcces' 	: 'http://steamspy.com/api.php?request=tag&tag=Early+Access',
-'openWorld' 	: 'http://steamspy.com/api.php?request=tag&tag=Open+World',
-'racing' 		: 'http://steamspy.com/api.php?request=tag&tag=Racing',
-'sandbox' 		: 'http://steamspy.com/api.php?request=tag&tag=Sandbox',
-'tactical' 		: 'http://steamspy.com/api.php?request=tag&tag=Tactical',
-}
+# dictionary with included genres with atleast 100 entries
+# sorted from lowest amount to highest amount based on https://steamdb.info/tags/
+genresDict = [
+    'Basketball', 'Spaceships', 'Social Deduction', 'Based On A Novel',
+    'Farming', 'Ambient', 'Electronic Music', 'Silent Protagonist', 'Unforgiving',
+    'Pinball', 'Jet', 'Outbreak Sim', 'Golf', 'Spelling', 'Rome', '360 Video',
+    'Epic', 'Werewolves', 'World War I', 'Transhumanism', 'Escape Room',
+    'Boxing', 'Horses', 'Sniper', 'Chess', 'Mars', 'Villain Protagonist',
+    'Documentary', 'Offroad', 'Gambling', 'Sailing', 'Trivia', 'Snow',
+    'Soccer','Music-Based Procedural Generation', 'Immersive', 'Archery',
+    'Time Attack', 'Heist', 'Diplomacy','On-Rails Shooter', 'Party',
+    'GameMaker', 'Naval Combat', 'Typing', 'Transportation','Action RTS',
+    'Illuminati', 'Minigames', 'Assassin', 'Cold War','Party Game','Faith',
+    'Cooking', 'Dungeons & Dragons', 'Vampire', 'Superhero', 'Auto Battler',
+    'Real-Time with Pause', 'Quick-Time Events', 'Fishing', 'Politics',
+    'Dynamic Narration', 'Dinosaurs', 'Programming', 'Western', 'Naval',
+    'Photo Editing', 'Trading Card Game', 'Underwater', 'Dog', 'Otome',
+    'MOBA', 'Mining', 'Trains', 'Hacking', 'Underground', 'Sokoban',
+    'Martial Arts', 'Hunting', 'Time Travel', 'FMV', 'Trading', 'Ninja',
+    'Hex Grid', 'Conspiracy', 'Gothic', 'Satire', 'Tanks','Spectacle fighter',
+    'Pirates','Political', 'Combat Racing', 'Creature Collector',
+    'Real-Time', 'Addictive', 'Time Manipulation', 'Agriculture',
+    'Episodic', 'Bullet Time'
+
+    # 'action',
+    # 'earlyAcces',
+    # 'openWorld',
+    # 'racing',
+    # 'sandbox',
+    # 'tactical',
+    # 'steamMachine',
+]
 
 
 def main():
-	makeData = False
-	dataFolder = './data/'
+	dataFolder = './data/initial/'
 
-	if makeData:
-		for i in genresDict:
-			response = requests.get(genresDict[i]).json()
+	bulkNumber = 5 # start from which bulk(real time.csv)
+	amountCounter = 0
+
+	for i in genresDict:
+		filename = 	dataFolder + str(bulkNumber) + '_' +  i + '.csv'
+		# don't make file again if already exist
+		if(not os.path.exists(filename)):
+			# response = requests.get(genresDict[i]).json()
+			link = "https://steamspy.com/api.php?request=tag&tag=" + i
+			response = requests.get(link).json()
 
 			# Write output to a file
 			# with open('output.json', 'w') as json_file:
@@ -35,23 +64,35 @@ def main():
 			# flip rows and columns
 			df_json = df_json.transpose()
 			
-			filename = 	'./data/' + i + '.csv'
 			df_json.to_csv(filename)
 
-	# print statistics for each file
-	directory = os.fsencode(dataFolder)
-	for file in os.listdir(directory):
-		fileName = os.fsdecode(file)
-		if fileName.endswith('.csv'):
-			df = pd.read_csv(dataFolder + fileName)
-			df = df[['appid','average_forever','negative','positive','name']]
-			print(f"--------------------------")
-			print(f"Stats for {fileName}")
-			print(f"--------------------------")
-			print(df[['average_forever','negative','positive']].describe())
-			print(f"Highest average_forever \n {df[df.average_forever == df.average_forever.max()]}")
-			print(f"Highest negative \n {df[df.negative == df.negative.max()]}")
-			print(f"Highest positive \n {df[df.positive == df.positive.max()]}")
+		# count the amount of items in the file
+		with open(filename, 'r') as fp:
+			x = len(fp.readlines())
+			amountCounter += x
+			if(amountCounter > 3600):
+				print('Total lines', amountCounter) # 8
+				amountCounter = 0
+				bulkNumber += 1
+
+		print(f"Done with {filename}")
+
+	printStat = False
+	if(printStat):
+		# print statistics for each file
+		directory = os.fsencode(dataFolder)
+		for file in os.listdir(directory):
+			fileName = os.fsdecode(file)
+			if fileName.endswith('.csv'):
+				df = pd.read_csv(dataFolder + fileName)
+				df = df[['appid','average_forever','negative','positive','name']]
+				print(f"--------------------------")
+				print(f"Stats for {fileName}")
+				print(f"--------------------------")
+				print(df[['average_forever','negative','positive']].describe())
+				print(f"Highest average_forever \n {df[df.average_forever == df.average_forever.max()]}")
+				print(f"Highest negative \n {df[df.negative == df.negative.max()]}")
+				print(f"Highest positive \n {df[df.positive == df.positive.max()]}")
 
 
 if __name__ == '__main__':

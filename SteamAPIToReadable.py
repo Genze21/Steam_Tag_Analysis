@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import os
 from os.path import exists
+import time
 
 # dictionary with included genres with atleast 100 entries
 # sorted from lowest amount to highest amount based on https://steamdb.info/tags/
@@ -26,7 +27,19 @@ genresDict = [
     'Hex Grid', 'Conspiracy', 'Gothic', 'Satire', 'Tanks','Spectacle fighter',
     'Pirates','Political', 'Combat Racing', 'Creature Collector',
     'Real-Time', 'Addictive', 'Time Manipulation', 'Agriculture',
-    'Episodic', 'Bullet Time'
+    'Episodic', 'Bullet Time' 'Hero Shooter', 'Mechs', 'Blood',
+	'Automation', 'Gun Customization', 'Parody', 'Capitalism', 'Word Game',
+	'Steampunk', 'Software Training', 'Farming Sim', '3D Vision', 'America',
+	'Solitaire', 'Vehicular Combat', 'Class-Based', 'Mouse only', 'Voxel',
+	'Mystery Dungeon', 'Colony Sim', 'Open World Survival Craft',
+	'Video Production','Dragons', 'eSports', 'Battle Royale', 'Noir',
+	'3D Fighter', 'Swordplay', 'Lovecraftian', 'MMORPG', 'Science',
+	'Philosophical', 'Card Battler', 'Audio Production', 'Cats',
+	'Deckbuilding', 'Dark Comedy', 'Game Development', 'Space Sim',
+	'Mythology', 'World War II', 'Idler', 'Rhythm', 'Crime',
+	'Collectathon', 'Grid-Based Movement', 'Parkour', 'Twin Stick Shooter',
+	'Animation & Modeling', 'Supernatural', 'Souls-like','Loot', 'Beautiful',
+	'Alternate History'
 
     # 'action',
     # 'earlyAcces',
@@ -48,6 +61,7 @@ def main():
 		filename = 	dataFolder + str(bulkNumber) + '_' +  i + '.csv'
 		# don't make file again if already exist
 		if(not os.path.exists(filename)):
+			time.sleep(2)
 			# response = requests.get(genresDict[i]).json()
 			link = "https://steamspy.com/api.php?request=tag&tag=" + i
 			response = requests.get(link).json()
@@ -66,12 +80,12 @@ def main():
 			
 			df_json.to_csv(filename)
 
-		# count the amount of items in the file
+		# count the amount of items in the file for creating bulks of 2 hours
 		print(f"Done with {filename}")
 		with open(filename, 'r') as fp:
 			x = len(fp.readlines())
 			amountCounter += x
-			if(amountCounter > 1800):
+			if(amountCounter > 3600):
 				print('Total entries', amountCounter) # 8
 				amountCounter = 0
 				bulkNumber += 1

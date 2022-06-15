@@ -18,7 +18,7 @@ def main():
 							'steam_appid': []})
 
 	initTime = time.time()
-	bulkNumber = '2_'
+	bulkNumber = '48_'
 
 	dataFolder = './data/initial/'
 	directory = os.fsencode(dataFolder)
@@ -37,19 +37,18 @@ def main():
 			appidsList = dfGenres['appid'].tolist()
 			for appid in appidsList:
 				# limit of 200 request every 5min for API (1 call per 1.5s)
-				time.sleep(2)
+				time.sleep(1.7)
 				
 				responseLink = 'https://store.steampowered.com/api/appdetails?appids='+ str(appid) + '&filters=release_date'
 				try:
 					response = requests.get(responseLink).json()
-					response.raise_for_status()
 				except requests.exceptions.TooManyRedirects:
 					# Tell the user their URL was bad and try a different one
 					print(f"link not correcct: {responseLink}")
 				except requests.exceptions.RequestException as e:  
 					print(f"Failed appid:{appid}, \t url:  {responseLink}")
 					print(e)
-					raise SystemExit(e)
+					# raise SystemExit(e)
 					continue
 				# normalize the json
 				dfReleaseDates = pd.json_normalize(response)

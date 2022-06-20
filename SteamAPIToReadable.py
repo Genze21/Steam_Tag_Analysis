@@ -1,9 +1,8 @@
 import requests
-import json
 import pandas as pd
+import time
 import os
 from os.path import exists
-import time
 
 # dictionary with included genres with atleast 100 entries
 # sorted from lowest amount to highest amount based on https://steamdb.info/tags/

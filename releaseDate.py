@@ -1,14 +1,9 @@
-from fileinput import filename
 import requests
-import json
 import pandas as pd
+import time
 import os
 from os.path import exists
-import time
-
-# response = requests.get(" https://store.steampowered.com/api/appdetails?appids=10&filters=release_date")
-# response = requests.get(" https://store.steampowered.com/api/appdetails?appids=1000750&filters=price_overview,release_date")
-# print(json.dumps(response.json(), sort_keys=True, indent = 4))
+import numpy as np
 
 def main():
 	# the initial dataframe
@@ -18,7 +13,9 @@ def main():
 							'steam_appid': []})
 
 	initTime = time.time()
-	bulkNumber = '48_'
+	bulkNumber = '84_'
+
+	wait_time = []
 
 	dataFolder = './data/initial/'
 	directory = os.fsencode(dataFolder)
@@ -37,18 +34,16 @@ def main():
 			appidsList = dfGenres['appid'].tolist()
 			for appid in appidsList:
 				# limit of 200 request every 5min for API (1 call per 1.5s)
-				time.sleep(1.7)
-				
+				starting = time.time()
+				time.sleep(1.25)
 				responseLink = 'https://store.steampowered.com/api/appdetails?appids='+ str(appid) + '&filters=release_date'
 				try:
 					response = requests.get(responseLink).json()
 				except requests.exceptions.TooManyRedirects:
 					# Tell the user their URL was bad and try a different one
 					print(f"link not correcct: {responseLink}")
-				except requests.exceptions.RequestException as e:  
+				except requests.exceptions.RequestException:  
 					print(f"Failed appid:{appid}, \t url:  {responseLink}")
-					print(e)
-					# raise SystemExit(e)
 					continue
 				# normalize the json
 				dfReleaseDates = pd.json_normalize(response)
@@ -61,9 +56,10 @@ def main():
 
 				# add the appid for merging
 				dfReleaseDates['steam_appid'] = appid
-				frames = [initDF, dfReleaseDates]
-				initDF = pd.concat(frames)
-
+				initDF = pd.concat((initDF,dfReleaseDates),axis=0)
+				
+				ending = time.time()
+				wait_time.append(ending - starting)
 			
 			# safe dates to a file
 			saveDateLocation = './data/dates/' + fileName[:-4] + '_dates.csv'
@@ -75,7 +71,8 @@ def main():
 			done = time.time()
 
 			print(f"Done with: \t {fileName}")
-			print(f"Time: \t {done - start}")
+			print(f"Mean loop time: \t {np.mean(wait_time)}")
+			print(f"Total time: \t {done - start}")
 			print("===========================")
 
 	total = time.time()

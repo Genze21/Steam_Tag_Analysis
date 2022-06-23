@@ -13,7 +13,7 @@ def main():
 							'steam_appid': []})
 
 	initTime = time.time()
-	bulkNumber = '84_'
+	bulkNumber = '89_'
 
 	wait_time = []
 
@@ -32,7 +32,7 @@ def main():
 			print(f"Start with: \t {fileName}")
 			# get every appid from dataset and call steam API
 			appidsList = dfGenres['appid'].tolist()
-			for appid in appidsList:
+			for i, appid in enumerate(appidsList):
 				# limit of 200 request every 5min for API (1 call per 1.5s)
 				starting = time.time()
 				time.sleep(1.25)
@@ -42,6 +42,7 @@ def main():
 				except requests.exceptions.TooManyRedirects:
 					# Tell the user their URL was bad and try a different one
 					print(f"link not correcct: {responseLink}")
+					continue
 				except requests.exceptions.RequestException:  
 					print(f"Failed appid:{appid}, \t url:  {responseLink}")
 					continue
@@ -60,6 +61,16 @@ def main():
 				
 				ending = time.time()
 				wait_time.append(ending - starting)
+				
+				if(i % 7200 == 0):
+					done = time.time()
+					print(f"Completed {i} entries")
+					print(f"Mean loop time: \t {np.mean(wait_time)}")
+					print(f"Total time: \t {done - start}")
+					print("===========================")
+					saveDateLocation = './data/dates/' + fileName[:-4] + '_dates_partial.csv'
+					initDF.to_csv(saveDateLocation)
+
 			
 			# safe dates to a file
 			saveDateLocation = './data/dates/' + fileName[:-4] + '_dates.csv'
@@ -77,7 +88,6 @@ def main():
 
 	total = time.time()
 	print(f"Total time: \t {total - initTime}")
-
 
 if __name__ == '__main__':
 	main()

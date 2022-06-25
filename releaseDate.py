@@ -13,7 +13,7 @@ def main():
 							'steam_appid': []})
 
 	initTime = time.time()
-	bulkNumber = '89_'
+	bulkNumber = '88_'
 
 	wait_time = []
 
@@ -27,12 +27,12 @@ def main():
 		saveLocation = './data/' + fileName[:-4] + '_full.csv'
 
 		if (fileName.startswith(bulkNumber) and fileName.endswith('.csv') and not os.path.exists(str(saveLocation))):
-			dfGenres = pd.read_csv(dataFolder + fileName)
+			dfGenres = pd.read_csv(dataFolder + fileName,encoding='utf-8-sig')
 
 			print(f"Start with: \t {fileName}")
 			# get every appid from dataset and call steam API
 			appidsList = dfGenres['appid'].tolist()
-			for i, appid in enumerate(appidsList):
+			for i, appid in enumerate(appidsList,start=1):
 				# limit of 200 request every 5min for API (1 call per 1.5s)
 				starting = time.time()
 				time.sleep(1.25)
@@ -62,7 +62,7 @@ def main():
 				ending = time.time()
 				wait_time.append(ending - starting)
 				
-				if(i % 7200 == 0):
+				if(i % 3000 == 0):
 					done = time.time()
 					print(f"Completed {i} entries")
 					print(f"Mean loop time: \t {np.mean(wait_time)}")

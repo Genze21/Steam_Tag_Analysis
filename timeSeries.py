@@ -1,10 +1,15 @@
 import pandas as pd
 import time
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
 initTime = time.time()
 
 df = pd.read_csv("./data/0_Boxing_full.csv",encoding='utf-8-sig')
+
+# colors for graph
+color1 = "blue"
+color2 = "orange"
+color3 = "grey"
 
 # seperate date into day, month and year
 df[["day", "month", "year"]] = df["release_date"].str.split(" ", expand = True)
@@ -46,42 +51,43 @@ df = df.sort_values(by="release_date")
 # https://stackoverflow.com/questions/48739374/pandas-plot-cumulative-sum-of-counters-over-time
 # create graph of total amount of games released
 dfAmount = df[['release_date']].copy()
-dfAmount['total'] = 1
 dfAmount.set_index('release_date',inplace=True)
-dfAmount.sort_index().cumsum().plot(color="green")
+dfAmount['total'] = 1
+dfAmount['cumsum'] = dfAmount['total'].sort_index().cumsum()
+
+fig,ax = plt.subplots()
+ax = dfAmount['cumsum'].plot(color=color1,label="Total")
+ax.legend('Total',loc=0)
 
 # plot
-plt.axvline('2019-07-24', color='red')
-plt.xlabel('Release Date')
-plt.ylabel('Total')
-plt.title('Boxing')
-plt.savefig('./plots/plot.png')
-
+# plt.axvline('2019-07-24', color='red')
+ax.set_xlabel('Release Date')
+ax.set_ylabel('Total',color=color1)
+ax.legend(loc=0)
 dfScore = df[['release_date','score_rank','positive','negative']].copy()
 
-# calculate score rank
+# ----------------------------------------------------------------------------
+# create graph of mean score
+
+# calculate a score rank based on positive and negative
 def calculate_score(pos,neg):
 	intpost,intneg  = int(pos),int(neg)
 	return float((intpost/(intpost+intneg))*100)
 
 dfScore['pos_neg'] = dfScore['positive'].astype(str)+"\t"+dfScore['negative'].astype(str)
 dfScore['score_rank'] = dfScore['pos_neg'].map(lambda x:calculate_score(x.split('\t')[0],x.split('\t')[1]))
-
-score = dfScore['score_rank']
-
 dfScore['score_mean'] = dfScore['score_rank'].rolling(5).mean()
-dfScore = dfScore[['release_date','score_mean']]
 
 dfScore.set_index('release_date',inplace=True)
-plt.clf()
-dfScore['score_mean'].plot(color="orange")
-
-plt.legend(["Mean score"],loc=0)
+ax2 = ax.twinx()
+ax2 = dfScore['score_mean'].plot(color=color2,label="Mean Score")
+ax2.set_ylabel("Mean score", color=color2)
+ax2.legend(["Mean score"],loc=1)
 
 # plot
-plt.axvline('2019-07-24', color='red')
-plt.xlabel('Release Date')
-plt.ylabel('Score')
+coronaDate = '2019-12-01'
+ax2.axvline(coronaDate, color=color3,label="Start Corona")
+ax2.legend(loc = 4)
 plt.title('Boxing Score')
 plt.savefig('./plots/plotscore.png')
 

@@ -72,17 +72,18 @@ dfScore = df[['release_date','score_rank','positive','negative']].copy()
 # calculate a score rank based on positive and negative
 def calculate_score(pos,neg):
 	intpost,intneg  = int(pos),int(neg)
-	return float((intpost/(intpost+intneg))*100)
+	return int((intpost/(intpost+intneg))*100)
 
 dfScore['pos_neg'] = dfScore['positive'].astype(str)+"\t"+dfScore['negative'].astype(str)
 dfScore['score_rank'] = dfScore['pos_neg'].map(lambda x:calculate_score(x.split('\t')[0],x.split('\t')[1]))
-dfScore['score_mean'] = dfScore['score_rank'].rolling(5).mean()
+dfScore['score_mean'] = dfScore['score_rank'].rolling(10).mean()
 
 dfScore.set_index('release_date',inplace=True)
 ax2 = ax.twinx()
 ax2 = dfScore['score_mean'].plot(color=color2,label="Mean Score")
 ax2.set_ylabel("Mean score", color=color2)
 ax2.legend(["Mean score"],loc=1)
+ax2.set_ylim(0,100)
 
 # plot
 coronaDate = '2019-12-01'

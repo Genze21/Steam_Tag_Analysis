@@ -1,21 +1,29 @@
 import os
 
-dataFolder = './data/'
-directory = os.fsencode(dataFolder)
-# loop through all datasets
-total = 0
+def main():
+	dataFolder = './data/'
+	directory = os.fsencode(dataFolder)
+	# loop through all datasets
+	total = 0
 
-for file in os.listdir(directory):	
-	fileName = os.fsdecode(file)
+	tooShort = []
 
-	if (fileName.endswith('.csv')):
-		# test if data is too small
-		with open("./data/" + fileName, "r") as fp:
-			x = len(fp.readlines())
-			minAmount = 100
+	for file in os.listdir(directory):	
+		fileName = os.fsdecode(file)
 
-			if(x < minAmount):
-				print(f"Total entries {x}, for file: {fileName} has less than {minAmount} \t ")
-				total += 1
+		if (fileName.endswith('.csv')):
+			# test if data is too small
+			with open("./data/" + fileName, "r") as fp:
+				x = len(fp.readlines())
+				minAmount = 100
 
-print(f"Total with too low amount {total}" ) # 8
+				if(x < minAmount):
+					print(f"Total entries {x}, for file: {fileName} has less than {minAmount} \t ")
+					tooShort.append(fileName)
+					total += 1
+
+	print(f"Total with too low amount {total}" ) # 8
+	return(tooShort)
+
+if __name__ == '__main__':
+	main()

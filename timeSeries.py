@@ -14,6 +14,43 @@ tooShort = dataAmount.main()
 dataFolder = './data/'
 directory = os.fsencode(dataFolder)
 
+# colors for graph
+color1 = "blue"
+color2 = "red"
+color3 = 'green'
+
+def monthConvert(month):
+	value = 0
+	if month == 'Jan,':
+		value = 1
+	elif month == 'Feb,':
+		value = 2
+	elif month == 'Mar,':
+		value = 3
+	elif month == 'Apr,':
+		value = 4
+	elif month == 'May,':
+		value = 5
+	elif month == 'Jun,':
+		value = 6
+	elif month == 'Jul,':
+		value = 7
+	elif month == 'Aug,':
+		value = 8
+	elif month == 'Sep,':
+		value = 9
+	elif month == 'Oct,':
+		value = 10
+	elif month == 'Nov,':
+		value = 11
+	else:
+		value = 12
+	return value
+
+# roundup to nearest 100th for y-limit
+def roundup(x):
+	return int(math.ceil(x / 100.0)) * 100
+
 # loop through all datasets
 for file in os.listdir(directory):	
 	start = time.time()
@@ -21,49 +58,16 @@ for file in os.listdir(directory):
 	fileName = os.fsdecode(file)
 
 	if (fileName.endswith('.csv') and fileName not in tooShort):
+	# if (fileName == '58_Female Protagonist_full.csv'):
 
 		print(f"Start with: \t {fileName}")
 
 		df = pd.read_csv('./data/' + fileName,encoding='utf-8-sig')
 		genre = fileName.split('_')[1]
 
-		# colors for graph
-		color1 = "blue"
-		color2 = "red"
-		color3 = 'green'
-		color4 = "grey"
-
 		# seperate date into day, month and year
 		df[["day", "month", "year"]] = df["release_date"].str.split(" ", expand = True)
 		# change month to numerical value
-		def monthConvert(month):
-			value = 0
-			if month == 'Jan,':
-				value = 1
-			elif month == 'Feb,':
-				value = 2
-			elif month == 'Mar,':
-				value = 3
-			elif month == 'Apr,':
-				value = 4
-			elif month == 'May,':
-				value = 5
-			elif month == 'Jun,':
-				value = 6
-			elif month == 'Jul,':
-				value = 7
-			elif month == 'Aug,':
-				value = 8
-			elif month == 'Sep,':
-				value = 9
-			elif month == 'Oct,':
-				value = 10
-			elif month == 'Nov,':
-				value = 11
-			else:
-				value = 12
-			return value
-
 		df['month'] = df['month'].map(lambda x:monthConvert(x))
 
 		# convert dateformat
@@ -89,14 +93,14 @@ for file in os.listdir(directory):
 		# Mean scores of the game
 		dfCopy['pos_neg'] = dfCopy['positive'].astype(str)+"\t"+dfCopy['negative'].astype(str)
 		dfCopy['score_rank'] = dfCopy['pos_neg'].map(lambda x:calculate_score(x.split('\t')[0],x.split('\t')[1]))
-		dfCopy['score_mean'] = dfCopy['score_rank'].rolling(10).mean()
+		rollingMeanValue = int(len(dfCopy)/20)
+		dfCopy['score_mean'] = dfCopy['score_rank'].expanding(10).mean()
+		dfCopy['score_rolling'] = dfCopy['score_rank'].rolling(rollingMeanValue).mean()
 		# Mean price of the game
 		dfCopy['price'] = dfCopy['price']/10 
-		dfCopy['price_mean'] = dfCopy['price'].rolling(10).mean()
+		dfCopy['price_mean'] = dfCopy['price'].expanding(10).mean()
+		# dfCopy['price_rolling'] = dfCopy['price'].rolling(rollingMeanValue).mean()
 
-		# roundup to nearest 100th for y-limit
-		def roundup(x):
-			return int(math.ceil(x / 100.0)) * 100
 		max = roundup(dfCopy['price_mean'].max())
 
 		# plot
@@ -109,7 +113,7 @@ for file in os.listdir(directory):
 
 		twin2.spines.right.set_position(("axes", 1.2))
 
-		labels = ['Total Games','Mean Score','Mean Price','Start Corona']
+		labels = ['Total Games','Mean Score','Rolling Mean Score','Mean Price','Rolling Mean Price','Start Corona']
 		# total games line
 		ln1 = ax.plot(dfCopy['cumsum'],color=color1,label=labels[0])
 		ax.set_xlabel('Release Date')
@@ -117,23 +121,25 @@ for file in os.listdir(directory):
 
 		# mean score and price lines
 		ln2 = twin1.plot(dfCopy['score_mean'],color=color2,label=labels[1])
-		ln3 = twin2.plot(dfCopy['price_mean'],color=color3,label=labels[2])
+		ln3 = twin1.plot(dfCopy['score_rolling'],color="darkred",label=labels[2])
+		ln4 = twin2.plot(dfCopy['price_mean'],color=color3,label=labels[3])
+		# ln5 = twin2.plot(dfCopy['price_rolling'],color="darkgreen",label=labels[4])
 
-		lns = ln1+ln2+ln3
+		lns = ln1+ln2+ln3+ln4
 
 		# Coronadate line
 		coronaDate = '2019-12-01'
-		ln4 = ax.axvline(pd.to_datetime(coronaDate), color=color4,label=labels[3])
-		lns.append(ln4)
+		ln6 = ax.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
+		lns.append(ln6)
 
-		ax.legend(handles=lns,loc=0)
+		ax.legend(handles=lns,loc=4)
 		ax.grid()
 		twin1.set_ylim(0,100)
-		twin1.set_ylabel(labels[1], color=color2)
+		twin1.set_ylabel(f'{labels[1]} (%)', color=color2)
 		twin2.set_ylim(0,max)
-		twin2.set_ylabel(labels[2], color=color3)
+		twin2.set_ylabel(f'{labels[3]} (\N{euro sign})', color=color3)
 
-		plt.title(f'{genre} Score')
+		plt.title(f'{genre}')
 		plt.savefig(f'./plots/{genre}.png')
 		plt.close()
 		done = time.time()

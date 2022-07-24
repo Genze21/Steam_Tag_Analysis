@@ -2,3 +2,5 @@ requests
 pandas
 steamctl
 matplotlib
+seaborn
+ipywidgets

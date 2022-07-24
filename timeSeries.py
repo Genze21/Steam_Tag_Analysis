@@ -4,12 +4,13 @@ from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 import math 
 import os
+import seaborn as sns
 import dataAmount
 
 initTime = time.time()
 
 # files that have less than 100 entires
-tooShort = dataAmount.main()
+# tooShort = dataAmount.main()
 
 dataFolder = './data/'
 directory = os.fsencode(dataFolder)
@@ -57,7 +58,8 @@ for file in os.listdir(directory):
 
 	fileName = os.fsdecode(file)
 
-	if (fileName.endswith('.csv') and fileName not in tooShort):
+	# if (fileName.endswith('.csv') and fileName not in tooShort):
+	if (fileName == '0_Pinball_full.csv'):
 	# if (fileName == '58_Female Protagonist_full.csv'):
 
 		print(f"Start with: \t {fileName}")
@@ -86,10 +88,12 @@ for file in os.listdir(directory):
 			return int((intpost/(intpost+intneg))*100)
 
 		dfCopy.set_index('release_date',inplace=True)
+		dfCopy.index = dfCopy.index.map(pd.Timestamp.toordinal)
 		# https://stackoverflow.com/questions/48739374/pandas-plot-cumulative-sum-of-counters-over-time
 		# total amount of games released
 		dfCopy['total'] = 1
-		dfCopy['cumsum'] = dfCopy['total'].sort_index().cumsum()
+		dfCopy['cumsum'] = dfCopy['total'].cumsum()
+		del dfCopy['total']
 		# Mean scores of the game
 		dfCopy['pos_neg'] = dfCopy['positive'].astype(str)+"\t"+dfCopy['negative'].astype(str)
 		dfCopy['score_rank'] = dfCopy['pos_neg'].map(lambda x:calculate_score(x.split('\t')[0],x.split('\t')[1]))
@@ -103,8 +107,14 @@ for file in os.listdir(directory):
 
 		max = roundup(dfCopy['price_mean'].max())
 
+		# convert the regression line start date to ordinal
+		x1 = pd.to_datetime('2019-01-02').toordinal()
+
+		# data slice for the regression line
+		data=dfCopy.loc[:x1].reset_index()
+
 		# plot
-		fig,ax = plt.subplots()
+		fig,ax = plt.subplots(figsize=(15, 6))
 		fig.subplots_adjust(right=0.75)
 
 		# for creating multiple y axis
@@ -119,6 +129,10 @@ for file in os.listdir(directory):
 		ax.set_xlabel('Release Date')
 		ax.set_ylabel(labels[0],color=color1)
 
+		# https://stackoverflow.com/a/69171277
+		sns.regplot(data=data, x='release_date', y='cumsum', ax=ax, color='magenta',  label='Linear Model', scatter=False)
+		ax.set_xlim(dfCopy.index[0], dfCopy.index[-1])
+
 		# mean score and price lines
 		ln2 = twin1.plot(dfCopy['score_mean'],color=color2,label=labels[1])
 		ln3 = twin1.plot(dfCopy['score_rolling'],color="darkred",label=labels[2])
@@ -128,12 +142,18 @@ for file in os.listdir(directory):
 		lns = ln1+ln2+ln3+ln4
 
 		# Coronadate line
-		coronaDate = '2019-12-01'
+		coronaDate = pd.to_datetime('2019-12-01').toordinal()
 		ln6 = ax.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
 		lns.append(ln6)
 
 		ax.legend(handles=lns,loc=4)
 		ax.grid()
+		xticks = ax.get_xticks()
+		labels = [pd.Timestamp.fromordinal(int(label)).date() for label in xticks]
+		ax.set_xticks(xticks)
+		ax.set_xticklabels(labels)
+
+
 		twin1.set_ylim(0,100)
 		twin1.set_ylabel(f'{labels[1]} (%)', color=color2)
 		twin2.set_ylim(0,max)

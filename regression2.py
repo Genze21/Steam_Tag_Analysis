@@ -10,7 +10,7 @@ import numpy as np
 initTime = time.time()
 
 # files that have less than 100 entires
-tooShort = dataAmount.main()
+# tooShort = dataAmount.main()
 
 dataFolder = './data/'
 directory = os.fsencode(dataFolder)
@@ -66,8 +66,8 @@ for file in os.listdir(directory):
 
 	fileName = os.fsdecode(file)
 
-	if (fileName.endswith('.csv') and fileName not in tooShort):
-	# if (fileName == '0_Pinball_full.csv'):
+	# if (fileName.endswith('.csv') and fileName not in tooShort):
+	if (fileName == '0_Pinball_full.csv'):
 	# if (fileName == '58_Female Protagonist_full.csv'):
 
 		print(f"Start with: \t {fileName}")
@@ -79,7 +79,6 @@ for file in os.listdir(directory):
 		df[["day", "month", "year"]] = df["release_date"].str.split(" ", expand = True)
 		# change month to numerical value
 		df['month'] = df['month'].map(lambda x:monthConvert(x))
-		df['year'] = pd.to_numeric(df['year'])
 
 		# convert dateformat
 		df['release_date'] = pd.to_datetime(df['release_date'])
@@ -97,8 +96,7 @@ for file in os.listdir(directory):
 		dfValuesCount.sort_values(by=['release_date'],inplace=True)
         
 		# fill empty dates for regression
-		startYear = int(dfCopy['year'].min())
-		startdate = f"{startYear}-01-01'"
+		startdate = f"{dfCopy['year'].min()}-01-01'"
 		new_date_range = pd.date_range(start=startdate, end="2022-05-01", freq="D")
 		dfValuesCount = dfValuesCount.reindex(new_date_range, fill_value=0)
 
@@ -115,32 +113,30 @@ for file in os.listdir(directory):
 
 		# https://ishan-mehta17.medium.com/simple-linear-regression-fit-and-prediction-on-time-series-data-with-visualization-in-python-41a77baf104c
 		x = np.arange(dfBeforeCovid.index.size)
+		print(x)
 		fit = np.polyfit(x, dfBeforeCovid['cumsum'], deg=1)
 
 		#Fit function : y = mx + c [linear regression ]
 		fit_function = np.poly1d(fit)
 
+		#Linear regression plot
 		plt.figure(figsize=(15,6))
 		
-		#Linear regression plot
 		plt.plot(dfBeforeCovid.index, fit_function(x),label='regression')
 		#Time series data plot
 		plt.plot(dfShort.index, dfShort['cumsum'],label='total')
 		plt.axvline(pd.to_datetime(coronaDate), color="black",label='Start Corona')
-		
 		plt.legend()
 		plt.grid()
 		plt.ylim(ymin=0)
-		
 		plt.xlabel('Release Date')
 		plt.ylabel('Total Games')
 		plt.title(f'{genre} Regression')
 		plt.savefig(f'./plots/regression/{genre}_regression.png')
 		# plt.clf()
-		plt.close()
-		# prediction output
-		# prediction = fit_function(dfBeforeCovid.index.size + 100)
-		# print(f'prediction: {prediction}')
+
+		prediction = fit_function(dfBeforeCovid.index.size + 100)
+		print(f'prediction: {prediction}')
 
 # ------------------------------------------------------------------------------
 # Stats for genre
@@ -163,7 +159,7 @@ for file in os.listdir(directory):
 		dfCopy['price_mean'] = dfCopy['price'].expanding(10).mean()
 		# dfCopy['price_rolling'] = dfCopy['price'].rolling(rollingMeanValue).mean()
 
-		roundUpValue = roundup(dfCopy['price_mean'].max())
+		maxRoundUp = roundup(dfCopy['price_mean'].max())
 
 		# plot
 		fig,ax = plt.subplots(figsize=(15, 6))
@@ -203,15 +199,15 @@ for file in os.listdir(directory):
 		ax.grid()
 		twin1.set_ylim(0,100)
 		twin1.set_ylabel(f'{labels[1]} (%)', color=color2)
-		twin2.set_ylim(0,roundUpValue)
+		twin2.set_ylim(0,maxRoundUp)
 		twin2.set_ylabel(f'{labels[3]} (\N{euro sign})', color=color3)
 
-		plt.title(f'{genre} Stats')
+		plt.title(f'{genre}')
 		plt.savefig(f'./plots/{genre}_stats.png')
 		plt.close()
 		done = time.time()
 
-		print(f"Loop time: \t {done - start}")
+		print(f"Total time: \t {done - start}")
 		print("===========================")
 
 total = time.time()

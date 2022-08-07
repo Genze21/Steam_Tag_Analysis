@@ -6,6 +6,7 @@ import math
 import os
 import dataAmount
 import numpy as np
+from sklearn.linear_model import LinearRegression
 
 initTime = time.time()
 
@@ -68,7 +69,6 @@ for file in os.listdir(directory):
 
 	if (fileName.endswith('.csv') and fileName not in tooShort):
 	# if (fileName == '0_Pinball_full.csv'):
-	# if (fileName == '58_Female Protagonist_full.csv'):
 
 		print(f"Start with: \t {fileName}")
 
@@ -123,9 +123,16 @@ for file in os.listdir(directory):
 		plt.figure(figsize=(15,6))
 		
 		#Linear regression plot
-		plt.plot(dfBeforeCovid.index, fit_function(x),label='regression')
+		plt.plot(dfShort.index, dfShort['cumsum'],label='total', color=color1)
+		plt.plot(dfBeforeCovid.index, fit_function(x),label='regression before Covid',color=color2)
+		
+		x = np.arange(dfAfterCovid.index.size)
+		fit = np.polyfit(x, dfAfterCovid['cumsum'], deg=1)
+
+		#Fit function : y = mx + c [linear regression ]
+		fit_function = np.poly1d(fit)
+		plt.plot(dfAfterCovid.index, fit_function(x),label='regression after Covid', color=color3)
 		#Time series data plot
-		plt.plot(dfShort.index, dfShort['cumsum'],label='total')
 		plt.axvline(pd.to_datetime(coronaDate), color="black",label='Start Corona')
 		
 		plt.legend()
@@ -206,9 +213,35 @@ for file in os.listdir(directory):
 		twin2.set_ylim(0,roundUpValue)
 		twin2.set_ylabel(f'{labels[3]} (\N{euro sign})', color=color3)
 
-		plt.title(f'{genre} Stats')
+		plt.title(f'{genre} Stats')	
 		plt.savefig(f'./plots/{genre}_stats.png')
 		plt.close()
+
+# ------------------------------------------------------------------------------
+# trend and detrend
+
+		X = [i for i in range(0, len(dfCopy))]
+		X = np.reshape(X, (len(X), 1))
+		y = dfCopy['cumsum'].values
+		model = LinearRegression()
+		model.fit(X, y)
+		# calculate trend
+		trend = model.predict(X)
+		# plot trend
+		plt.clf()
+		plt.plot(trend)
+
+		plt.title(f'{genre} trend')	
+		plt.savefig(f'./plots/trend/{genre}_trend.png')
+		# detrend
+		detrended = [y[i]-trend[i] for i in range(0, len(df))]
+		# plot detrended
+		plt.clf()
+		plt.plot(detrended)
+
+		plt.title(f'{genre} detrend')	
+		plt.savefig(f'./plots/detrend/{genre}_detrend.png')
+
 		done = time.time()
 
 		print(f"Loop time: \t {done - start}")

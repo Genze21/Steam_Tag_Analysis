@@ -4,3 +4,5 @@ steamctl
 matplotlib
 seaborn
 ipywidgets
+sklearn
+statsmodels

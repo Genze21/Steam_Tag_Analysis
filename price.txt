@@ -1,0 +1,3 @@
+Total price increase: 	 60
+Total price decrease: 	 89
+Total price even: 	 147

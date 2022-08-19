@@ -1,0 +1,3 @@
+Total slope increase: 	 268
+Total slope decrease: 	 17
+Total slope even: 	 11

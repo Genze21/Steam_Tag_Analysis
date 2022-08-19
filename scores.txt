@@ -1,0 +1,3 @@
+Total score increase: 	 0
+Total score decrease: 	 231
+Total score even: 	 65

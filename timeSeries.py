@@ -1,12 +1,16 @@
+from statistics import mode
 import pandas as pd
 import time
-from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 import math 
 import os
+import scipy.stats as stats
+from scipy.stats import pearsonr,spearmanr
 import dataAmount
 import numpy as np
 from sklearn.linear_model import LinearRegression
+import statsmodels.api as sm
+from statsmodels.stats.weightstats import ttest_ind
 
 initTime = time.time()
 
@@ -61,6 +65,24 @@ def calculate_score(pos,neg):
 def roundup(x):
 	return int(math.ceil(x / 10.0)) * 10
 
+slopeIncrease = []
+slopeDecrease = []
+slopeEven = []
+
+
+statAnalysis = {}
+genreList = []
+statisticList = []
+pvalueList = []
+
+scoreIncrease = []
+scoreDecrease = []
+scoreEven = []
+
+priceIncrease = []
+priceDecrease = []
+priceEven = []
+
 # loop through all datasets
 for file in os.listdir(directory):	
 	start = time.time()
@@ -69,6 +91,12 @@ for file in os.listdir(directory):
 
 	if (fileName.endswith('.csv') and fileName not in tooShort):
 	# if (fileName == '0_Pinball_full.csv'):
+	# if (fileName == '8_Audio Production_full.csv'):
+	# if (fileName == '88_Action_full.csv'):
+	# if (fileName == '58_Female Protagonist_full.csv'):
+
+	# if ((fileName == '0_Pinball_full.csv') or (fileName == '8_Audio Production_full.csv') 
+	# or (fileName == '88_Action_full.csv') or (fileName == '58_Female Protagonist_full.csv')):
 
 		print(f"Start with: \t {fileName}")
 
@@ -86,7 +114,7 @@ for file in os.listdir(directory):
 		df = df.sort_values(by="release_date")
 
 		# create graph of total amount of games, mean score, mean price
-		dfCopy = df[['release_date','score_rank','positive','negative','price','year']].copy()
+		dfCopy = df[['release_date','score_rank','positive','negative','price','year','month','day']].copy()
 
 # Regression for genre -------------------------------------------------------------------
 		# convert value counts to a dataframe
@@ -105,34 +133,140 @@ for file in os.listdir(directory):
 		dfValuesCount['cumsum'] = dfValuesCount['counts'].cumsum()
 
 		# selected dates for testing
-		startMeasure = '2016-01-01'
+		startMeasure = '2017-01-01'
 		coronaDate = '2020-01-01'
 
 		# create seperate dataframes based on before and after corona
-		dfBeforeCovid = dfValuesCount[startMeasure:coronaDate]
-		dfAfterCovid = dfValuesCount[coronaDate:]
-		dfShort = dfValuesCount[startMeasure:]
+		dfShort = dfValuesCount[startMeasure:].copy()
+		
+		dfBeforeCovid = dfShort[startMeasure:coronaDate].copy()
+		dfBeforeCovid['days_from_start'] = (dfBeforeCovid.index - dfBeforeCovid.index[0]).days; 
 
+		dfAfterCovid = dfShort[coronaDate:].copy()
+		dfAfterCovid['days_from_start'] = (dfAfterCovid.index - dfAfterCovid.index[0]).days; 
+
+		dfBeforeCovidCopy = dfBeforeCovid.copy()
+		dfBeforeCovidCopy = dfBeforeCovidCopy.drop('cumsum', axis=1)
+		dfBeforeCovidCopy['cumsum'] = dfBeforeCovidCopy['counts'].cumsum()
+
+		dfAfterCovidCopy = dfAfterCovid.copy()
+		dfAfterCovidCopy = dfAfterCovidCopy.drop('cumsum', axis=1)
+		dfAfterCovidCopy['cumsum'] = dfAfterCovidCopy['counts'].cumsum()
+
+		# https://stackoverflow.com/questions/66110650/how-to-compare-the-slopes-of-two-regression-lines
+		before_slope, before_coef = np.polyfit(dfBeforeCovidCopy['days_from_start'], dfBeforeCovidCopy['cumsum'], 1)
+		after_slope, after_coef = np.polyfit(dfAfterCovidCopy['days_from_start'], dfAfterCovidCopy['cumsum'], 1)
+		# print("-----")
+
+		if((before_slope - after_slope) <= -0.02):
+			slopeIncrease.append(genre)
+		elif((before_slope - after_slope) >= 0.02):
+			slopeDecrease.append(genre)
+		else:
+			slopeEven.append(genre)
+
+
+
+		N = len(dfAfterCovidCopy)
+		dftmp = dfBeforeCovidCopy[(dfBeforeCovidCopy['days_from_start'] < N) ]
+
+		blue_y = dftmp['cumsum'].to_numpy()
+		light_blue_y = dfAfterCovidCopy['cumsum'].to_numpy()
+
+		y = blue_y-light_blue_y
+		# Let create a linear regression
+		mod = sm.OLS(y, sm.add_constant(dfAfterCovidCopy['days_from_start']))
+		res = mod.fit()
+
+		# print(res.summary())
+		# print(res.summary2().tables[1]['P>|t|'])
+		# print(res.pvalues)
 		# https://ishan-mehta17.medium.com/simple-linear-regression-fit-and-prediction-on-time-series-data-with-visualization-in-python-41a77baf104c
 		x = np.arange(dfBeforeCovid.index.size)
 		fit = np.polyfit(x, dfBeforeCovid['cumsum'], deg=1)
 
 		#Fit function : y = mx + c [linear regression ]
 		fit_function = np.poly1d(fit)
+		line1 = fit_function.c
+
+		size = dfBeforeCovid.size
+
+		def correlationValues(line,length):
+			x = []
+			for i in range(length):
+				x.append((line[0]) * i + line[1])
+				x.append((line[0]) * i)
+			return(x)
+
+		# print(f"reg before:{fit_function}")
+		beforeValues = correlationValues(line1,size)
+
+		x = dfBeforeCovid['days_from_start'].values.reshape(-1, 1)
+		y = dfBeforeCovid['cumsum'].values
+
+		model = LinearRegression().fit(x, y)
+		r_sq = model.score(x, y)
+		# print(f"coefficient of determination: {r_sq}")
+		# print(f"intercept: {model.intercept_}")
+		# print(f"slope: {model.coef_}")
+
+		y_pred = model.predict(x)
+		# print(f"predicted response:\n{y_pred}")
+
+		# print(model.summary())
+
+		mod = sm.OLS(y, x)
+		fii = mod.fit()
+		# print(fii.summary())
+		p_values = fii.summary2().tables[1]['P>|t|']
+		# print(p_values)
+
 
 		plt.figure(figsize=(15,6))
 		
 		#Linear regression plot
 		plt.plot(dfShort.index, dfShort['cumsum'],label='total', color=color1)
-		plt.plot(dfBeforeCovid.index, fit_function(x),label='regression before Covid',color=color2)
+		reg1 = plt.plot(dfBeforeCovid.index, fit_function(x),label='regression before Covid',color=color2)
 		
 		x = np.arange(dfAfterCovid.index.size)
 		fit = np.polyfit(x, dfAfterCovid['cumsum'], deg=1)
 
 		#Fit function : y = mx + c [linear regression ]
 		fit_function = np.poly1d(fit)
-		plt.plot(dfAfterCovid.index, fit_function(x),label='regression after Covid', color=color3)
-		#Time series data plot
+		line2 = fit_function.c
+		b = [1,line2[0]]
+		# print(f"reg after:{fit_function}")
+
+		afterValues = correlationValues(line2,size)
+
+		# https://www.geeksforgeeks.org/how-to-conduct-a-two-sample-t-test-in-python/
+		# Conducting two-sample ttest
+
+		# print(stats.ttest_ind(a=beforeValues, b=afterValues, equal_var=True))
+
+		statValue,pvalue = stats.ttest_ind(a=beforeValues, b=afterValues, equal_var=True)
+		
+		genreList.append(genre)
+		statisticList.append(statValue)
+		pvalueList.append(pvalue)
+		# print("-------")
+		# result = pg.ttest(beforeValues, afterValues, correction=True)
+		
+		# Print the result
+		# print(result)
+
+
+		# print(ttest_ind(beforeValues, afterValues))
+
+
+		corr = np.corrcoef(beforeValues,afterValues) 
+		# print(corr)
+		# print(corr[0][1])
+		# print(corr[1][0])
+
+		reg2 = plt.plot(dfAfterCovid.index, fit_function(x),label='regression after Covid', color=color3)
+		#Time series data plot	
+		
 		plt.axvline(pd.to_datetime(coronaDate), color="black",label='Start Corona')
 		
 		plt.legend()
@@ -171,17 +305,6 @@ for file in os.listdir(directory):
 		# dfCopy['price_rolling'] = dfCopy['price'].rolling(rollingMeanValue).mean()
 
 		roundUpValue = roundup(dfCopy['price_mean'].max())
-
-		# plot
-		fig,ax = plt.subplots(figsize=(15, 6))
-		fig.subplots_adjust(right=0.75)
-
-		# for creating multiple y axis
-		twin1 = ax.twinx()
-		twin2= ax.twinx()
-
-		twin2.spines.right.set_position(("axes", 1.2))
-
 		labels = ['Total Games',
 		'Mean Score',
 		'Rolling Mean Score',
@@ -189,10 +312,69 @@ for file in os.listdir(directory):
 		'Rolling Mean Price',
 		'Start Corona']
 
+		scoreBefore = dfCopy['score_mean'].loc[(dfCopy['year'] < 2020)].iloc[-1]
+		scoreAfter = dfCopy['score_mean'].iloc[-1]
+		if(scoreBefore - scoreAfter >= 5):
+			scoreDecrease.append(genre)
+		elif(scoreBefore - scoreAfter <= -5 ):
+			scoreIncrease.append(genre)
+		else:
+			scoreEven.append(genre)
+
+		priceBefore = dfCopy['price_mean'].loc[(dfCopy['year'] < 2020)].iloc[-1]
+		priceAfter = dfCopy['price_mean'].iloc[-1]
+		if(priceBefore - priceAfter >= 5):
+			priceDecrease.append(genre)
+		elif(priceBefore - priceAfter <= -5 ):
+			priceIncrease.append(genre)
+		else:
+			priceEven.append(genre)
+
+		# stats in seperate plots
+		# plt.figure(figsize=(15, 6))
+		# plt.plot(dfCopy['cumsum'],color=color1,label=labels[0])
+		# plt.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
+		# plt.grid()
+		# plt.legend()
+		# plt.savefig(f'./plots/releases/{genre}_release.png')
+		# plt.clf()
+
+		# plt.grid()
+		# plt.plot(dfCopy['score_mean'],color=color2,label=labels[1])
+		# plt.plot(dfCopy['score_rolling'],color="darkred",label=labels[2])
+		# plt.ylim(0,100)
+		# plt.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
+		# plt.legend()
+		# plt.title(f'{genre} Score')	
+		# plt.savefig(f'./plots/score/{genre}_score.png')
+		# plt.clf()
+
+		# plt.grid()
+		# plt.plot(dfCopy['price_mean'],color=color3,label=labels[3])
+		# plt.title(f'{genre} Price')	
+		# plt.ylim(0,roundUpValue)
+		# plt.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
+		# plt.legend()
+		# plt.savefig(f'./plots/price/{genre}_price.png')
+		# plt.close()		
+
+		# plot 
+		fig,ax = plt.subplots(figsize=(15, 6))
+		fig.subplots_adjust(right=0.75)
+
+
+		# for creating multiple y axis
+		twin1 = ax.twinx()
+		twin2= ax.twinx()
+
+		twin2.spines.right.set_position(("axes", 1.2))
+
+
 		# total games line
 		ln1 = ax.plot(dfCopy['cumsum'],color=color1,label=labels[0])
 		ax.set_xlabel('Release Date')
 		ax.set_ylabel(labels[0],color=color1)
+
 
 		# mean score and price lines
 		ln2 = twin1.plot(dfCopy['score_mean'],color=color2,label=labels[1])
@@ -248,4 +430,32 @@ for file in os.listdir(directory):
 		print("===========================")
 
 total = time.time()
+with open ('slopes.txt','w') as f:
+	f.write((f"Total slope increase: \t {len(slopeIncrease)}"))
+	f.write('\n')
+	f.write((f"Total slope decrease: \t {len(slopeDecrease)}"))
+	f.write('\n')
+	f.write((f"Total slope even: \t {len(slopeEven)}"))
+
+with open ('scores.txt','w') as f:
+	f.write((f"Total score increase: \t {len(scoreIncrease)}"))
+	f.write('\n')
+	f.write((f"Total score decrease: \t {len(scoreDecrease)}"))
+	f.write('\n')
+	f.write((f"Total score even: \t {len(scoreEven)}"))
+
+with open ('price.txt','w') as f:
+	f.write((f"Total price increase: \t {len(priceIncrease)}"))
+	f.write('\n')
+	f.write((f"Total price decrease: \t {len(priceDecrease)}"))
+	f.write('\n')
+	f.write((f"Total price even: \t {len(priceEven)}"))
+
+# with open ('t-test.csv','w') as f:
+# 	f.write((f"genre, statistics ,pvalue"))
+# 	f.write('\n')
+# 	for count,value in enumerate (genreList):
+# 		f.write((f"{genreList[count]}, {statisticList[count]} ,{pvalueList[count]}"))
+# 		f.write('\n')
+
 print(f"Total time: \t {total - initTime}")

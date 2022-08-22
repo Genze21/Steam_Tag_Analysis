@@ -13,7 +13,7 @@ def main():
 							'steam_appid': []})
 
 	initTime = time.time()
-	bulkNumber = '88_'
+	bulkNumber = '91_'
 
 	wait_time = []
 
@@ -39,6 +39,8 @@ def main():
 				responseLink = 'https://store.steampowered.com/api/appdetails?appids='+ str(appid) + '&filters=release_date'
 				try:
 					response = requests.get(responseLink).json()
+					# normalize the json
+					dfReleaseDates = pd.json_normalize(response)
 				except requests.exceptions.TooManyRedirects:
 					# Tell the user their URL was bad and try a different one
 					print(f"link not correcct: {responseLink}")
@@ -46,8 +48,6 @@ def main():
 				except requests.exceptions.RequestException:  
 					print(f"Failed appid:{appid}, \t url:  {responseLink}")
 					continue
-				# normalize the json
-				dfReleaseDates = pd.json_normalize(response)
 
 				# skip if fail (succes = false)
 				if(len(dfReleaseDates.columns) != 3):	
@@ -62,7 +62,7 @@ def main():
 				ending = time.time()
 				wait_time.append(ending - starting)
 				
-				if(i % 3000 == 0):
+				if(i % 500 == 0):
 					done = time.time()
 					print(f"Completed {i} entries")
 					print(f"Mean loop time: \t {np.mean(wait_time)}")

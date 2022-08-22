@@ -4,13 +4,13 @@ from matplotlib import pyplot as plt
 import matplotlib.pyplot as plt
 import math 
 import os
-import dataAmount
+import dataExlude
 import numpy as np
 
 initTime = time.time()
 
 # files that have less than 100 entires
-# tooShort = dataAmount.main()
+# tooShort = dataExlude.main()
 
 dataFolder = './data/'
 directory = os.fsencode(dataFolder)

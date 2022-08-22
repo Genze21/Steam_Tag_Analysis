@@ -1,3 +1,4 @@
-Total score increase: 	 0
-Total score decrease: 	 231
-Total score even: 	 65
+Total large score increase: 	 0
+Total small score increase: 	 1
+Total small score decrease: 	 69
+Total large score decrease: 	 237

@@ -1,3 +1,4 @@
-Total slope increase: 	 268
-Total slope decrease: 	 17
-Total slope even: 	 11
+Total large slope increase: 	 274
+Total small slope increase: 	 8
+Total large slope decrease: 	 21
+Total small slope decrease: 	 4

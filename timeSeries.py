@@ -25,6 +25,11 @@ color1 = "blue"
 color2 = "red"
 color3 = 'green'
 
+# fontsizes
+legendSize = 14
+labelSize = 16
+titleSize = 20
+
 def monthConvert(month):
 	value = 0
 	if month == 'Jan,':
@@ -93,13 +98,6 @@ for file in os.listdir(directory):
 	fileName = os.fsdecode(file)
 
 	if (fileName.endswith('.csv') and fileName not in tooShort):
-	# if (fileName == '0_Pinball_full.csv'):
-	# if (fileName == '8_Audio Production_full.csv'):
-	# if (fileName == '88_Action_full.csv'):
-	# if (fileName == '58_Female Protagonist_full.csv'):
-
-	# if ((fileName == '0_Pinball_full.csv') or (fileName == '8_Audio Production_full.csv') or (fileName == '88_Action_full.csv') or (fileName == '58_Female Protagonist_full.csv')):
-
 		print(f"Start with: \t {fileName}")
 
 		df = pd.read_csv('./data/' + fileName,encoding='utf-8-sig')
@@ -273,13 +271,13 @@ for file in os.listdir(directory):
 		
 		plt.axvline(pd.to_datetime(coronaDate), color="black",label='Start Corona')
 		
-		plt.legend()
+		plt.legend(fontsize=legendSize)
 		plt.grid()
 		plt.ylim(ymin=0)
 		
-		plt.xlabel('Release Date')
-		plt.ylabel('Total Games')
-		plt.title(f'{genre} Regression')
+		plt.xlabel('Release Date',fontsize=labelSize)
+		plt.ylabel('Total Games',fontsize=labelSize)
+		plt.title(f'{genre} Regression',fontsize=titleSize)
 		plt.savefig(f'./plots/regression/{genre}_regression.png')
 		# plt.clf()
 		plt.close()
@@ -344,11 +342,11 @@ for file in os.listdir(directory):
 		plt.figure(figsize=(10, 6))
 		plt.plot(dfCopy['cumsum'],color=color1,label=labels[0])
 		plt.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
-		plt.xlabel('Release Date')
-		plt.ylabel(labels[0],color=color1)
+		plt.xlabel('Release Date',fontsize=labelSize)
+		plt.ylabel(labels[0],color=color1,fontsize=labelSize)
 		plt.grid()
-		plt.legend()
-		plt.title(f'{genre} Releases')	
+		plt.legend(fontsize=legendSize)
+		plt.title(f'{genre} Releases',fontsize=titleSize)	
 		plt.savefig(f'./plots/releases/{genre}_release.png')
 		plt.clf()
 
@@ -357,21 +355,21 @@ for file in os.listdir(directory):
 		plt.plot(dfCopy['score_rolling'],color="darkred",label=labels[2])
 		plt.ylim(0,100)
 		plt.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
-		plt.xlabel('Release Date')
-		plt.ylabel(f'{labels[1]} (%)', color=color2)
-		plt.legend()
-		plt.title(f'{genre} Score')	
+		plt.xlabel('Release Date',fontsize=labelSize)
+		plt.ylabel(f'{labels[1]} (%)', color=color2,fontsize=labelSize)
+		plt.legend(fontsize=legendSize)
+		plt.title(f'{genre} Score',fontsize=titleSize)	
 		plt.savefig(f'./plots/score/{genre}_score.png')
 		plt.clf()
 
 		plt.grid()
 		plt.plot(dfCopy['price_mean'],color=color3,label=labels[3])
-		plt.title(f'{genre} Price')	
+		plt.title(f'{genre} Price',fontsize=titleSize)	
 		plt.ylim(0,roundUpValue)
 		plt.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
-		plt.xlabel('Release Date')
-		plt.ylabel(f'{labels[3]} (\N{dollar sign})', color=color3)
-		plt.legend()
+		plt.xlabel('Release Date',fontsize=labelSize)
+		plt.ylabel(f'{labels[3]} (\N{dollar sign})', color=color3,fontsize=labelSize)
+		plt.legend(fontsize=legendSize)
 		plt.savefig(f'./plots/price/{genre}_price.png')
 		plt.close()		
 
@@ -389,8 +387,8 @@ for file in os.listdir(directory):
 
 		# total games line
 		ln1 = ax.plot(dfCopy['cumsum'],color=color1,label=labels[0])
-		ax.set_xlabel('Release Date')
-		ax.set_ylabel(labels[0],color=color1)
+		ax.set_xlabel('Release Date',fontsize=labelSize)
+		ax.set_ylabel(labels[0],color=color1,fontsize=labelSize)
 
 
 		# mean score and price lines
@@ -405,14 +403,14 @@ for file in os.listdir(directory):
 		ln6 = ax.axvline(pd.to_datetime(coronaDate), color="black",label=labels[5])
 		lns.append(ln6)
 
-		ax.legend(handles=lns,loc=3)
+		ax.legend(handles=lns,loc=3,fontsize=legendSize)
 		ax.grid()
 		twin1.set_ylim(0,100)
-		twin1.set_ylabel(f'{labels[1]} (%)', color=color2)
+		twin1.set_ylabel(f'{labels[1]} (%)', color=color2,fontsize=labelSize)
 		twin2.set_ylim(0,roundUpValue)
-		twin2.set_ylabel(f'{labels[3]} (\N{dollar sign})', color=color3)
+		twin2.set_ylabel(f'{labels[3]} (\N{dollar sign})', color=color3,fontsize=labelSize)
 
-		plt.title(f'{genre} Stats')	
+		plt.title(f'{genre} Stats',fontsize=titleSize)	
 		plt.savefig(f'./plots/{genre}_stats.png')
 		plt.close()
 
@@ -430,7 +428,7 @@ for file in os.listdir(directory):
 		plt.clf()
 		plt.plot(trend)
 
-		plt.title(f'{genre} trend')	
+		plt.title(f'{genre} trend',fontsize=titleSize)	
 		plt.savefig(f'./plots/trend/{genre}_trend.png')
 		# detrend
 		detrended = [y[i]-trend[i] for i in range(0, len(df))]
@@ -438,7 +436,7 @@ for file in os.listdir(directory):
 		plt.clf()
 		plt.plot(detrended)
 
-		plt.title(f'{genre} detrend')	
+		plt.title(f'{genre} detrend',fontsize=titleSize)	
 		plt.savefig(f'./plots/detrend/{genre}_detrend.png')
 
 		done = time.time()
@@ -451,7 +449,7 @@ total = time.time()
 writeToggle = False
 
 if(writeToggle):
-	with open ('slopes.txt','w') as f:
+	with open ('./statistics/slopes.txt','w') as f:
 		f.write((f"Total large slope increase: \t {len(slopeIncreaseLarge)}"))
 		f.write('\n')
 		f.write((f"Total small slope increase: \t {len(slopeIncreaseSmall)}"))
@@ -460,7 +458,7 @@ if(writeToggle):
 		f.write('\n')
 		f.write((f"Total small slope decrease: \t {len(slopeDecreaseSmall)}"))
 
-	with open ('scores.txt','w') as f:
+	with open ('./statistics/scores.txt','w') as f:
 		f.write((f"Total large score increase: \t {len(scoreIncreaseLarge)}"))
 		f.write('\n')
 		f.write((f"Total small score increase: \t {len(scoreIncreaseSmall)}"))
@@ -469,7 +467,7 @@ if(writeToggle):
 		f.write('\n')
 		f.write((f"Total large score decrease: \t {len(scoreDecreaseLarge)}"))
 
-	with open ('price.txt','w') as f:
+	with open ('./statistics/price.txt','w') as f:
 		f.write((f"Total large price increase: \t {len(priceIncreaseLarge)}"))
 		f.write('\n')
 		f.write((f"Total small price increase: \t {len(priceIncreaseSmall)}"))
@@ -478,7 +476,7 @@ if(writeToggle):
 		f.write('\n')
 		f.write((f"Total small price decrease: \t {len(priceDecreaseSmall)}"))
 
-	with open ('t-test.csv','w') as f:
+	with open ('./statistics/t-test.csv','w') as f:
 		f.write((f"genre, statistics ,pvalue,slope"))
 		f.write('\n')
 		for count,value in enumerate (genreList):

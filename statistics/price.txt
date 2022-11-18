@@ -1,0 +1,4 @@
+Total large price increase: 	 25
+Total small price increase: 	 107
+Total large price decrease: 	 52
+Total small price decrease: 	 123
